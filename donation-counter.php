@@ -5,6 +5,7 @@ Version: 1.0.1
 Description: Donation counter for Woocommerce
 Author: OnlineVagyok
 Author URI: https://onlinevagyok.hu
+Text Domain: donation-counter
 */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -13,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once(__DIR__.'/woocommerce-menu-addons.php');
 add_action( 'woocommerce_product_options_general_product_data', 'dcfwc_woo_custom_fields' );
 /**
 * Add a select Field at the bottom
@@ -21,7 +23,7 @@ function dcfwc_woo_custom_fields() {
  
   woocommerce_wp_text_input( array(
     'id' => 'dcfwc_woo_custom_fields',
-    'label' => __( 'Adomány:', 'textdomain' ),
+    'label' => __( 'Adomány:', 'donation-counter' ),
 
   ));
 }
@@ -46,7 +48,7 @@ function dcfwc_after_add_to_cart_btn(){
 	$productID = get_the_ID();
 	$donate_value = get_post_meta($productID, 'dcfwc_woo_custom_fields', true);
 	if ( $donate_value ){
-		echo '<span class="donate_value">Adományra szánt összeg: ' . esc_attr($donate_value, 'dcfwc_woo_custom_fields') . ' Ft</span>';
+		echo '<div class="donate_value">Adományra szánt összeg: ' . esc_attr($donate_value, 'dcfwc_woo_custom_fields') . ' Ft</div>';
 	}
 	
 }
@@ -57,15 +59,18 @@ function dcfwc_woocommerce_cart_contents(){
 
   global $woocommerce;
   $items = $woocommerce->cart->get_cart();
+  $all_donation = 0;
+  foreach($items as $item => $values) { 
+    $_product =  wc_get_product( $values['data']->get_id()); 
+    $donate = get_post_meta($values['product_id'] , 'dcfwc_woo_custom_fields', true);
+    if ( $donate ){
+      $all_donation += ($values['quantity']*$donate);
+    }  
+  }
 
-      foreach($items as $item => $values) { 
-          $_product =  wc_get_product( $values['data']->get_id()); 
-          $donate = get_post_meta($values['product_id'] , 'dcfwc_woo_custom_fields', true);
-          if ( $donate ){
-              echo "<b>".$_product->get_title().'</b>  <br> Quantity: '.$values['quantity'].'<br>'; 
-              echo "  Price: ".$donate."<br>";
-          }
-          
-      } 
+  if($all_donation>0){
+    echo "Összes Adomány: ".
+    sprintf(get_woocommerce_price_format(),get_woocommerce_currency_symbol(),$all_donation);
+  } 
 
 }
