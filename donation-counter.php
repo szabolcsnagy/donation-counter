@@ -53,7 +53,7 @@ function dcfwc_after_add_to_cart_btn(){
 	
 }
 
-add_action( 'woocommerce_cart_contents', 'dcfwc_woocommerce_cart_contents' );
+add_action( 'woocommerce_after_cart_totals', 'dcfwc_woocommerce_cart_contents' );
  
 function dcfwc_woocommerce_cart_contents(){
 
