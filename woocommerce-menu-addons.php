@@ -1,7 +1,5 @@
 <?php
 
-
-
 # adding menu to Woocommerce
 add_action("admin_menu","dcfwc_add_menu");
 function dcfwc_add_menu() {
@@ -26,7 +24,6 @@ function dcfwc_update_options_page() {
         <?php # and php again
           settings_fields("dcfwc_config");
           do_settings_sections("donation-options");
-          submit_button();
         ?>
       </form> 
     </div>
@@ -46,46 +43,15 @@ function dcfwc_settings(){
     "donation-options"                  # $page
   );
 
-  add_settings_field(
-    "donation-counter-name",            # $id
-    "Adomány Neve",                     # $title
-    "dcfwc_settings_name",              # $callback
-    "donation-options",                 # $page
-    "dcfwc_config"                      # $section from above
-  );
-
   #You MUST register any options or they won’t be saved and updated automatically.
   register_setting(
     "dcfwc_config",                     # $option_group - same as the section
-    "donation-counter-text"             # $option_name - same as the field name
-  );
-
-  # active field
-  add_settings_field(
-    "donation-counter-active",          # $id
-    "Active",                           # $title
-    "dcfwc_settings_active",            # $callback
-    "donation-options",                 # $page
-    "dcfwc_config"                      # $section from above
+    "donation-counter-name"             # $option_name - same as the field name
   );
 
   register_setting(
     "dcfwc_config",                     # $option_group - same as the section
-    "donation-counter-active"           # $option_name - same as the field name
-  );
-
-  # sum field
-  add_settings_field(
-    "donation-counter-sum",             # $id
-    "Jelenlegi Osszeg",                 # $title
-    "dcfwc_settings_sum",               # $callback
-    "donation-options",                 # $page
-    "dcfwc_config"                      # $section from above
-  );
-  
-  register_setting(
-    "dcfwc_config",                     # $option_group - same as the section
-    "donation-counter-sum"              # $option_name - same as the field name
+    "donation-counter-id"               # $option_name - same as the field name
   );
 
   # past donations
@@ -103,68 +69,186 @@ function dcfwc_settings(){
   );
 }
 
-# the callback for the text field
-function dcfwc_settings_name() {
-  # should render the input control
-  ?>
-  <div class="postbox" style="padding: 30px;">
-    <input type="text" name="donation-counter-name" value="<?php
-      echo stripslashes_deep(esc_attr(get_option("donation-counter-name")));
-    ?>" />
-  </div>
-
-  <?php
-}
-
-# the callback for the checkbox
-function dcfwc_settings_active() {
-  # should render the input control
-  ?>
-  <div class="postbox" style="padding: 30px;">
-    <input type="checkbox" id="donation-counter-active" name="donation-counter-active" value="1" <?php
-      echo esc_attr(get_option('donation-counter-active')) == 1 ? 'checked' : '';
-    ?> />
-    <label for="donation-counter-active">Active</label>
-  </div>
-
-  <?php
-}
-
-
-# the callback for the sum
-function dcfwc_settings_sum() {
-  # should render the input control
-  ?>
-  <div class="postbox" style="padding: 30px;">
-    <input type="text" name="donation-counter-sum" value="<?php
-      echo sprintf(get_woocommerce_price_format(),get_woocommerce_currency_symbol(),esc_attr(get_option("donation-counter-sum",0)));
-    ?>" readonly/>
-  </div>
-
-  <?php
-}
-
 
 # the callback for the list
 function dcfwc_settings_list() {
+  
   # should render the input control
-  $donationList = json_decode(get_option("donation-counter-list",'[{"name":"Owl","sum":1234,"status":"Active"}]'));
+  $donationList = get_option("donation-counter-list",'');
   ?>
-  <table>
+  <input type="hidden" id="donation-counter-id" name="donation-counter-id" value="<?php
+      esc_attr_e(get_option('donation-counter-id'));
+  ?>" />
+  <input type="hidden" id="donation-counter-name" name="donation-counter-name" value="<?php
+      esc_attr_e(get_option('donation-counter-name'));
+  ?>" />
+  <input type="hidden" name="donation-counter-sum" value="<?php esc_attr_e(dcfwc_add_up_donation(get_option('donation-counter-id')));?>"/>
+  <input type="hidden" name="donation-counter-list" id="donation-counter-list" value="<?php esc_attr_e($donationList);?>"/>
+  <button class="button" id="new-donation">Új kampány hozzáadása</button>
+  
+  <table id="past-donations">
+    <thead>
     <tr>
-      <th>Adomany</th>
-      <th>Osszeg</th>
-      <th>Status</th>
+      <th>Adomány</th>
+      <th>Összeg</th>
+      <th>Státusz</th>
+      <th></th>
     </tr>
-    <?php
-    foreach($donationList as $index => $donation) { 
-      $sumFormatted = sprintf(get_woocommerce_price_format(),get_woocommerce_currency_symbol(),$donation->sum);
-      echo '<tr>';
-      echo sprintf('<td>%s</td><td>%s</td><td>%s</td>',$donation->name,$sumFormatted,$donation->status);
-      echo '</tr>';
-    }
-    ?>
+    </thead>
+    <tbody>
+    </tbody>
   </table>
-    
+ 
+  <script id="row-template" type="text/x-custom-template">
+    <tr data-campaign-id={id}>
+        <td>{campaign}</td>
+        <td>{sum}</td>
+        <td>{status}</td>
+        <td>{close}</td>
+    <tr>
+  </script>
+  <script id="new-row-template" type="text/x-custom-template">
+    <tr data-campaign-id={id} id="new-campaign">
+        <td><input type="text" name="campaign"/></td>
+        <td>0 Ft</td>
+        <td>Aktív</td>
+        <td><button id="save-new" type="submit" class="button">Mentés</button></td>
+    <tr>
+  </script>
+  <script id="no-donations-template" type="text/x-custom-template">
+    <tr>
+        <td colspan="4">No campaign yet.</td>
+    <tr>
+  </script>
+
+  
+  <script>
+    (function($){
+      var ACTIVE_LABEL = 'Aktív';
+      var originalList = function() {
+        var list = $('#donation-counter-list').val();
+        
+        var arrList = [];
+        if (list) {
+          var arrList = JSON.parse(list);
+          arrList = $.isArray(arrList) ? arrList : [];
+        }
+        var campaignId = $('#donation-counter-id').val();
+        var currentSum = $('[name="donation-counter-sum"]').val();
+        if(!isNaN(parseInt(campaignId)) && !isNaN(parseFloat(currentSum))) {
+          arrList =arrList.map(function(donation){
+            if(donation.id == campaignId) {
+              donation.sum = currentSum;
+            }
+            return donation;
+          })
+        }
+        // write back the list with the new sum
+        $('#donation-counter-list').val(JSON.stringify(arrList));
+
+        return arrList;
+      }();
+
+      var nextId = originalList.reduce(function(acc,donation){
+        var id = isNaN(parseInt(donation.id))?0:donation.id;
+        return acc < id? id : acc;
+      },0) + 1;
+
+      function init(arrList){
+        
+          if (arrList.length) {
+
+            var template = $('#row-template').html();
+            arrList.forEach(function(row){
+              $('#past-donations tbody').append(
+                template.replace('{id}',row.id)
+                .replace('{campaign}',row.campaign)
+                .replace('{sum}',row.sum + ' Ft')
+                .replace('{status}',row.status)
+                .replace('{close}',row.status === ACTIVE_LABEL?'<button id="close-campaign" class="button" type="submit">Lezár</button>':'')
+                )
+              
+            });
+
+            $('#past-donations tbody').find('#close-campaign').on('click',closeCampaign);
+
+          } else {  
+            $('#past-donations tbody').append($('#no-donations-template').html());
+          }
+      
+        
+        $('#new-donation').on('click',function(e){
+          
+          e.preventDefault();
+          if(hasActive(originalList) && !confirm('Az új kampány automatikusan lezárja a jelenleg aktívat. Mehet?')) {
+            return;
+          }
+          if(!$('#past-donations #new-campaign').length){
+            $('#past-donations tbody').prepend($('#new-row-template').html())
+            .find('#save-new').on('click',saveCampaign);
+          }
+        });
+      }
+
+      function closeAllActive(arrList) {
+        return arrList.map(function(donation){donation.status='Lezárva';return donation;});
+      }
+
+      function hasActive(arrList) {
+        return arrList.filter(function(donation){return donation.status==='Active';}).length > 0;
+      }
+      function saveCampaign(e) {
+        
+        var button = $(e.target);
+        var textInput = button.closest('tr').find('[name=campaign]')
+        var campaign = textInput.val();
+        button.attr('disabled',true);
+        textInput.attr('disabled',true);
+        if(!campaign) {
+          alert('Adomány név kötelezõ');
+          e.preventDefault();
+          return;
+        }
+       
+        var record = {
+          id: nextId,
+          campaign: campaign,
+          sum:0,
+          status: ACTIVE_LABEL
+        };
+        $('[name=donation-counter-name]').val(record.campaign);
+        $('[name=donation-counter-id]').val(record.id);
+        
+        originalList = closeAllActive(originalList);
+        originalList.unshift(record);
+        var newList = JSON.stringify(originalList);
+        $('#donation-counter-list').val(newList);
+      }
+
+      function closeCampaign(e){
+        
+        if (!confirm('Biztos hogy lezárod a kampányt?')) {
+          e.preventDefault();
+          return;
+        } 
+        $('[name=donation-counter-name]').val('');
+        $('[name=donation-counter-id]').val('');
+        originalList = closeAllActive(originalList);
+        var newList = JSON.stringify(originalList);
+        $('#donation-counter-list').val(newList);
+      }
+      
+      init(originalList);
+      
+    })(jQuery);
+  </script>
   <?php
+}
+
+# add up the donations for a given campaign
+function dcfwc_add_up_donation($campaign_id) {
+  global $wpdb;
+  $query = "select sum(meta_value) from wp_postmeta pm join wp_posts p on pm.post_id=p.id where pm.meta_key='_donation_amount_%d' AND p.post_status='wc-completed'";
+  $summa = $wpdb->get_var($wpdb->prepare($query,$campaign_id));
+  return $summa;
 }
