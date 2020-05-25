@@ -248,7 +248,7 @@ function dcfwc_settings_list() {
 # add up the donations for a given campaign
 function dcfwc_add_up_donation($campaign_id) {
   global $wpdb;
-  $query = "select sum(meta_value) from wp_postmeta pm join wp_posts p on pm.post_id=p.id where pm.meta_key='_donation_amount_%d' AND p.post_status='wc-completed'";
+  $query = "select sum(meta_value) from {$wpdb->prefix}postmeta pm join {$wpdb->prefix}posts p on pm.post_id=p.id where pm.meta_key='_donation_amount_%d' AND p.post_status='wc-completed'";
   $summa = $wpdb->get_var($wpdb->prepare($query,$campaign_id));
   return $summa;
 }
