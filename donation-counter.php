@@ -88,7 +88,8 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
    * Render donations line
    */
   function render_donations($all_donation) {
-    if($all_donation>0){
+    $donationId = get_option('donation-counter-id');
+    if($all_donation>0 && is_numeric($donationId)){
       echo '<tr class="donation-subtotal">';
 			echo '<th>Összes Adomány</th>';
       echo '<td data-title="Összes Adomány"><span class="amount">';
