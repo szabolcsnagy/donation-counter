@@ -56,7 +56,8 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
     
     $productID = get_the_ID();
     $donate_value = get_post_meta($productID, 'dcfwc_woo_custom_fields', true);
-    if ( $donate_value ){
+    $donationId = get_option('donation-counter-id');
+    if ( $donate_value && is_numeric($donationId) ){
       echo '<div class="donate_value">Adományra szánt összeg: ' . esc_attr($donate_value, 'dcfwc_woo_custom_fields') . ' Ft</div>';
     }
     
@@ -88,7 +89,8 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
    * Render donations line
    */
   function render_donations($all_donation) {
-    if($all_donation>0){
+    $donationId = get_option('donation-counter-id');
+    if($all_donation>0 && is_numeric($donationId)){
       echo '<tr class="donation-subtotal">';
 			echo '<th>Összes Adomány</th>';
       echo '<td data-title="Összes Adomány"><span class="amount">';
