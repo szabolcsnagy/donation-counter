@@ -56,7 +56,8 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
     
     $productID = get_the_ID();
     $donate_value = get_post_meta($productID, 'dcfwc_woo_custom_fields', true);
-    if ( $donate_value ){
+    $donationId = get_option('donation-counter-id');
+    if ( $donate_value && is_numeric($donationId) ){
       echo '<div class="donate_value">Adományra szánt összeg: ' . esc_attr($donate_value, 'dcfwc_woo_custom_fields') . ' Ft</div>';
     }
     
