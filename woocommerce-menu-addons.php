@@ -223,6 +223,8 @@ function dcfwc_settings_list() {
         originalList.unshift(record);
         var newList = JSON.stringify(originalList);
         $('#donation-counter-list').val(newList);
+        var form = $('#donation-counter-list').closest('form');
+        form.submit();
       }
 
       function closeCampaign(e){
