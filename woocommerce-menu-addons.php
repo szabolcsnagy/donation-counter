@@ -195,7 +195,7 @@ function dcfwc_settings_list() {
       }
 
       function hasActive(arrList) {
-        return arrList.filter(function(donation){return donation.status==='Active';}).length > 0;
+        return arrList.filter(function(donation){return donation.status===ACTIVE_LABEL;}).length > 0;
       }
       function saveCampaign(e) {
         
