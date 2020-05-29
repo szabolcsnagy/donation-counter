@@ -154,5 +154,27 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
       printf('<div class="campaignSumma"><span class="label">%s</span>: <span class="sum">%s</span></div>',$campaign_name,$formattedSum);
     }
   }
+  add_shortcode('campaign_name','dcfwc_render_campaign_name');
+  function dcfwc_render_campaign_name() {
+    $campaign_id = get_option('donation-counter-id');
+    $campaign_name = get_option('donation-counter-name');
+    if(is_numeric($campaign_id)) {
+      $donationAmount = dcfwc_add_up_donation($campaign_id);
+      $donationAmount = empty($donationAmount)?0:$donationAmount;
+      $formattedSum = sprintf(get_woocommerce_price_format(),get_woocommerce_currency_symbol(),$donationAmount);
+      printf('<div class="campaignSumma"><span class="label">%s</span></div>',$campaign_name);
+    }
+  }
+  add_shortcode('campaign_sum','dcfwc_render_campaign_sum');
+  function dcfwc_render_campaign_sum() {
+    $campaign_id = get_option('donation-counter-id');
+    $campaign_name = get_option('donation-counter-name');
+    if(is_numeric($campaign_id)) {
+      $donationAmount = dcfwc_add_up_donation($campaign_id);
+      $donationAmount = empty($donationAmount)?0:$donationAmount;
+      $formattedSum = sprintf(get_woocommerce_price_format(),get_woocommerce_currency_symbol(),$donationAmount);
+      printf('<div class="campaignSumma"><span class="sum">%s</span></div>',$formattedSum);
+    }
+  }
 
 }
